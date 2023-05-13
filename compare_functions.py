@@ -12,6 +12,18 @@ def mean_of_difference(control, treatment):
     return np.mean(treatment - control)
 
 
+def percent_difference_of_mean(control, treatment):
+    """Calculates ratio between control and treatment. Useful when your statistics
+        might be close to zero. Provides a symmetric result.
+    Args:
+        control: numpy array of control statistics
+        treatment: numpy array of treatment statistics
+    Returns:
+        (treatment - control) / ((control + treatment) / 2.0) * 100.0
+    """
+    return (np.mean(treatment) - np.mean(control)) / ((np.mean(control) + np.mean(treatment)) / 2.0) * 100.0
+
+
 def difference_of_mean(control, treatment):
     """Calculates difference of mean change.
     Args:

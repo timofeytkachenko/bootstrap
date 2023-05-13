@@ -11,13 +11,13 @@ from tqdm.auto import tqdm
 from typing import Tuple, Union, Callable
 
 
-def estimate_quantile_of_mean(sample: np.ndarray, batch_size: int = 10000, bootstrap_conf_level: float = 0.95,
+def estimate_quantile_of_mean(sample: np.ndarray, batch_size_percent: int = 5, bootstrap_conf_level: float = 0.95,
                               shuffle: bool = True) -> float:
     """
 
     Args:
         sample (ndarray): 1D array containing observations
-        batch_size (int): Batch size. Defaults to 10000
+        batch_size_percent (int): Batch size. Defaults to 5% of sample size
         bootstrap_conf_level (float): bootstrap confidence level. Defaults to 0.95
         shuffle (bool): If True, then sample will be shuffled. Defaults to True
 
@@ -28,6 +28,7 @@ def estimate_quantile_of_mean(sample: np.ndarray, batch_size: int = 10000, boots
     if shuffle:
         np.random.shuffle(sample)
 
+    batch_size = int(np.ceil(sample.shape[0]*batch_size_percent/100))
     batches = np.array_split(sample, batch_size)
     batch_means = np.array([np.mean(batch) for batch in batches])
     mean = np.median(batch_means)
@@ -293,20 +294,23 @@ def spotify_two_sample_bootstrap(control: object, treatment: object, number_of_b
 
     sorted_control = np.sort(control)
     sorted_treatment = np.sort(treatment)
-    bootstrap_difference_distribution = sorted_treatment[binomial(treatment_sample_size + 1, quantile_of_interest,
-                                                                  number_of_bootstrap_samples)] - sorted_control[
-                                            binomial(control_sample_size + 1, quantile_of_interest,
-                                                     number_of_bootstrap_samples)]
+    treatment_sample_values = sorted_treatment[
+        binomial(treatment_sample_size + 1, quantile_of_interest, number_of_bootstrap_samples)]
+    control_sample_values = sorted_control[
+        binomial(control_sample_size + 1, quantile_of_interest, number_of_bootstrap_samples)]
+    bootstrap_difference_distribution = statistic(control_sample_values, treatment_sample_values)
 
-    bootstrap_difference_mean = statistic(np.quantile(sorted_treatment, quantile_of_interest),
-                                          np.quantile(sorted_control, quantile_of_interest))
+    bootstrap_difference_mean = statistic(
+        np.quantile(sorted_control, quantile_of_interest), np.quantile(sorted_treatment, quantile_of_interest))
 
     bootstrap_confidence_interval = estimate_confidence_interval(bootstrap_difference_distribution,
                                                                  bootstrap_conf_level)
     p_value = estimate_p_value(bootstrap_difference_distribution, number_of_bootstrap_samples)
     if plot:
         statistic = f'q-{quantile_of_interest} Difference'
-        bootstrap_plot(bootstrap_difference_distribution, bootstrap_confidence_interval, statistic=statistic)
+    bootstrap_plot(bootstrap_difference_distribution, bootstrap_confidence_interval, statistic=statistic)
+
+
     return p_value, bootstrap_difference_mean, bootstrap_confidence_interval, bootstrap_difference_distribution
 
 
