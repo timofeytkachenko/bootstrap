@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm, binom
 from numpy.random import normal, binomial
 from multiprocess import Pool, cpu_count
-from compare_functions import difference_of_mean
+from compare_functions import difference_of_mean, difference
 from scipy.stats import percentileofscore
 from tqdm.auto import tqdm
 from typing import Tuple, Union, Callable
@@ -261,6 +261,7 @@ def spotify_one_sample_bootstrap(sample: np.ndarray, sample_size: int = None, qu
 
 def spotify_two_sample_bootstrap(control: object, treatment: object, number_of_bootstrap_samples: object = 10000,
                                  sample_size: object = None, quantile_of_interest: object = 0.5,
+                                 statistic: object = difference,
                                  bootstrap_conf_level: object = 0.95,
                                  plot: object = True) -> object:
     """Two-sample Spotify-Bootstrap
@@ -276,7 +277,7 @@ def spotify_two_sample_bootstrap(control: object, treatment: object, number_of_b
         sample_size (int): Sample size. Defaults to None. If None,
             then control_sample_size and treatment_sample_size
             wiil be equal to control.shape[0] and treatment.shape[0] respectively
-        statistic (Callable): Statistic function. Defaults to difference_of_mean.
+        statistic (Callable): Statistic function. Defaults to difference.
             Choose statistic function from compare_functions.py
         plot (bool): If True, then bootstrap plot will be shown. Defaults to True
     Returns:
@@ -297,8 +298,8 @@ def spotify_two_sample_bootstrap(control: object, treatment: object, number_of_b
                                             binomial(control_sample_size + 1, quantile_of_interest,
                                                      number_of_bootstrap_samples)]
 
-    bootstrap_difference_mean = np.quantile(sorted_treatment, quantile_of_interest) - np.quantile(sorted_control,
-                                                                                                  quantile_of_interest)
+    bootstrap_difference_mean = statistic(np.quantile(sorted_treatment, quantile_of_interest),
+                                          np.quantile(sorted_control, quantile_of_interest))
 
     bootstrap_confidence_interval = estimate_confidence_interval(bootstrap_difference_distribution,
                                                                  bootstrap_conf_level)
